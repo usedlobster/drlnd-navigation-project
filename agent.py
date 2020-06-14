@@ -23,20 +23,20 @@ class TheAgent:
         self.end() 
     
     def start(self, viewer = False ):
-    
+    	# create instance of UnityEnvHelper - to start the environment 
         if self.env == None:
             self.env = UnityEnvHelper( self.agent_file , seed = self.seed , no_graphics = not viewer  )
 
         
     def end( self ):
-        
+        # release unity environment 
         if self.env != None:
             del self.env
             self.env = None
 
 
     def save_model( self , filename = 'model.pt' ):
-        
+        # save the models weights of q1 into given filename 
         try:
             if self.q1 != None:
                 torch.save( self.q1.state_dict(), filename )
@@ -48,7 +48,7 @@ class TheAgent:
 
 
     def load_model( self , filename = 'model.pt' ):
-
+    	# load weigths from the given filename into q1
         if self.q1 != None:
                 if os.path.exists( filename ):
                     self.q1.load_state_dict( torch.load( filename ))
@@ -60,6 +60,11 @@ class TheAgent:
     
         # check if cuda device available
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        # reset torch / numpy random seeds 
+        torch.manual_seed( self.seed ) 
+        np.random.seed(self.seed)
+
         # save the hyperparmeters
         self.H = hyper_params 
         
@@ -76,10 +81,11 @@ class TheAgent:
 
         # setup the ADAM  optimizer for training q1 
         optimizer = torch.optim.Adam( self.q1.parameters() , lr = self.H.ALPHA ) 
+        
         # create replay buffer of given size
         replay_buffer = deque( maxlen= self.H.REPLAY_BUFFER_SIZE )
 
-        # keep track of how many in buffer could use len( replay_buffer ) 
+        # keep track of how many in buffer technically it is len( replay_buffer ) 
         n_replay = 0 
 
         # set epsilon to start value 
@@ -90,57 +96,49 @@ class TheAgent:
 
         for ith in range( 1 , max_episodes+1 ):
 
-            # reset environment to start state
-
+            # reset environment to start state in training mode
             self.env.reset( True ) 
 
             # score starts at 0 
-
             score = 0
-            # get initial state vector
+
+            # get initial start state
             state = self.env.state()
 
             while True:
 
                 # pick action to explore / follow  using greedy+ 
-
-                if ( score > 2 ) or ( random.random() > eps ):
+                if ( score > 1 ) or ( random.random() > eps ):
 
                     # make state a tensor input
                     inp_v = torch.from_numpy(state).float().unsqueeze(0).to( device )                    
                     # get output for this state without training 
-
                     self.q1.eval()
                     with torch.no_grad():
                         out_v = self.q1( inp_v ).detach()
                     self.q1.train()
 
-                    # get action index with maximum value 
+                    # get action index 
                     action = np.argmax( out_v.cpu().data.numpy())
-
                 else :                              
-
-                    # just pick an action at pseudo random equaly likely                            
+                    # just pick a random action  
                     action = np.random.randint(self.env.action_size)
 
                 # perform action - and get observation tuple ( including passed state / action )
                 obs = self.env.step( state , action ) 
-
-                # update the score
+                # update the current score
                 score += obs['reward']
                 # add observation to replay_buffer
                 replay_buffer.append( obs )
                 # keep track  of number 
                 n_replay+=1 
-
-                # train if we have at least 2xH.MINIBATCH_SIZE samples , every H.UPDATE_EVERY frames
-                if ( n_replay > self.H.MINIBATCH_SIZE*2 ) and (( n_replay % self.H.UPDATE_EVERY ) == 0):
-                    
+                # train if we have at least 2xH.MINIBATCH_SIZE samples , every H.UPDATE_EVERY frames            
+                if ( n_replay > self.H.MINIBATCH_SIZE*2 ) and (( n_replay % self.H.UPDATE_EVERY ) == 0):                    
                     # pick samples from replay_buffer with uniform probability 
                     samples = random.sample( replay_buffer , self.H.MINIBATCH_SIZE )
-
-                    # extract to seperate state , next_state , reward , action , done vectors
-                    # for batch processing 
+                    # extract state,next,reward,action,done into seperate tensors
+                    # for batch processing ... so b_s[0] contains the state of the first
+                    # sample etc... 
 
                     b_s = torch.from_numpy(np.vstack([[d['state'] for d in samples ]])).float().to(device)
                     b_n = torch.from_numpy(np.vstack([[d['next_state'] for d in samples ]])).float().to(device)
@@ -148,25 +146,24 @@ class TheAgent:
                     b_a = torch.from_numpy(np.stack([[d['action'] for d in samples ]],axis=-1)).long().to(device)
                     b_d = torch.from_numpy(np.stack([[d['done'] for d in samples ]] ,axis=-1).astype(np.uint8)).float().to(device)
 
-                    # use q2 network to calcualte current 
+                    # use the q2 network to calcualte current 
+
                     Q_max = self.q2( b_n ).max(1)[0].unsqueeze(1)
                     Q_target = b_r + ( self.H.GAMMA * Q_max * ( 1 - b_d ))  
 
                     #
                     Q_exp = self.q1( b_s ).gather( 1 , b_a )  
 
-                    # very important! - reset previous optimizer gradients values
+                    # very important! - reset previous optimizer previous history                
                     optimizer.zero_grad()                  
-                    # compute loss 
+                    # compute loss as simple means squared error 
                     loss = F.mse_loss( Q_exp , Q_target ) 
                     # propagate loss backward 
                     loss.backward()
-
                     # run optimizer - this updates q1 - weights
                     optimizer.step()
 
-                    # now transfer pro-rata weights from q1 to q2 
-                    # as H.TAU is small , q2 is only changed very slowly 
+                    # now transfer a small amount of q1 weights to q2 .
                     # 
                     self.q2.copy_weights_from( self.q1 , self.H.TAU )
                 

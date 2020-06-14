@@ -23,7 +23,7 @@ class UnityEnvHelper:
         self.action_size = self.brain.vector_action_space_size
         
         # reset the environment , in training mode 
-       
+        
         self.reset( True  )
        
        # get the state space size 
@@ -43,28 +43,31 @@ class UnityEnvHelper:
         
         # tell the unity agent to restart an episode 
         # training mode simple seems to run the simulation at full speed 
-        
         self.ue_info = self.uenv.reset( train_mode = train_mode )[self.brain_name]   
+
     # we pass in current state for convenience 
     def step( self , state ,  action ) :
        
         # perform action on environment  and get observation
-        self.ue_info = self.uenv.step(action)[self.brain_name]   
-        
-        # return state , action and resulting state , reward and done flag 
-
-        return { 'state':state,'action':action,'reward':self.reward(),'next_state':self.state(),'done':self.done() }
+        self.ue_info = self.uenv.step(action)[self.brain_name]           
+        # return state , action , next state , reward and done flag
+        # slightly 
+        return { 'state':state,
+        		 'action':action,
+        		 'reward':self.reward(),
+        		 'next_state':self.state(),
+        		 'done':self.done() }
         
     def state( self ) :
-        # just return what we think is current state 
+        # just last observation state
         return self.ue_info.vector_observations[0]
         
     def reward( self ) :
-        # return the reward from last step
+        # return reward from last observation
         return self.ue_info.rewards[0]                   
     
     def done( self ) : 
-        # return if done at last step 
+        # return done flag  
         return self.ue_info.local_done[0]               
 
     
