@@ -3,11 +3,13 @@
 
 ## Project 1 - Navigation
 
-[![A Trained agent](https://img.youtube.com/vi/AiWIgRDte3Q/default.jpg)](https://www.youtube.com/watch?v=AiWIgRDte3Q)
+[![A Trained agent](https://img.youtube.com/vi/ou-iFp0bhrs/maxresdefault.jpg)](https://www.youtube.com/watch?v=ou-iFp0bhrs)
+
+
 
 ### Project Details 
 
-For this project, we have been given the task of training an agent to navigate (and collect bananas!) in a large, square world. The world is an provided as a virtual environment using Unity Machine Learning Agents ( https://github.com/Unity-Technologies/ml-agents).
+For this project, we have been given the task of training an agent to navigate (and collect bananas!) in a large, square world. The world is  provided as a virtual environment using Unity Machine Learning Agents ( https://github.com/Unity-Technologies/ml-agents).
 
 A reward of +1 is provided for collecting a yellow banana, and a reward of -1 is provided for collecting a blue banana.  The goal of the agent is to collect as many yellow bananas as possible while avoiding blue bananas  
 
@@ -60,15 +62,15 @@ The training code is found in the *agent.py* file , along with helper functions 
 
 For convenince the interface to these is contained in the *Trainer.ipynb* jupyter / ipython notebook, where one can experemint and visualize the various HyperParameter choices. 
 
-You need to run all the code in  ***section 0*** first , but can skip any of sections 1,2, and 3.
+You need to run all the code in  ***section 0*** first! , but can then run any of sections 1,2 and 3.
 
 **0 . Setup **
 
 Firstly, update the variable AGENT_FILE to match the path where you downloaded  the binary unity agent code.
 
-If desired to train with new hyperparameters just change them in the HYPER_PARAMS class object.
+If desired to try new hyperparameters, just change them in the HYPER_PARAMS class object.
 
-Then execute all the cells in that section.
+And run the cells in this section.
 
 **1. Training** 
 
@@ -90,10 +92,8 @@ Just to prove the model, we can load the agent again ( with different seed ) , a
 
 This is usefull todo as its possible the model may have worsened during the later stages of training. ( see my Report.MD - for more information).
 
-**3. Play **
+**3. Play**
 
-For completness, it is possible to play a single episode with the trained model weights. By default with the viewer / at normal speed - but can be changed. It will print out the score at the end of the run.
-
-
+For completness, it is possible to play a single episode with the trained model weights. By default with the viewer window and at normal speed - but can be changed. It will print out the final score at the end of each run.
 
 
