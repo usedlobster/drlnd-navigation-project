@@ -90,7 +90,7 @@ A plot of scores obtained during training is produced.
 
 Just to prove the model, we can load the agent again ( with different seed ) , and run another 100 episodes, and visualize the results.
 
-This is usefull todo as its possible the model may have worsened during the later stages of training. ( see my Report.MD - for more information).
+This is usefull todo as its possible the model may have worsened during the later stages of training. ( see my Report.pdf - for more information).
 
 **3. Play**
 
